@@ -24,7 +24,7 @@
 * Paneles interactivos de información meteorológica ("Nuestras Tecnologías").
 * Control simulado y sincronización virtual de sensores embebidos *(Arduino, Apps Blynk)* para granjas hidropónicas urbanas.
 
-### 🧠 Motor de IA para Cultivos Verticales (`/vertical_crop_ai`)
+### 🧠 Motor GopherMind AI (`/gophermind_ai`)
 * **Pipeline Cognitivo de 15 fases** implementado en Go puro: sanitización CUSUM, filtro Hampel, predicción multi-motor, fusión Bayesiana, detección de drift Page-Hinkley, y calibración de confianza.
 * **Procesamiento Concurrente:** Goroutines + Channels para análisis simultáneo de múltiples racks sin bloquear el servidor.
 * **Alta Disponibilidad:** Buffer de memoria con flush automático que permite operar sin base de datos temporal.
@@ -47,9 +47,9 @@ El proyecto se despliega unificando tecnologías escalables:
 * **Drizzle ORM:** Definición de esquemas typesafe de alta complejidad.
 * **Neon DB (Serverless PostgreSQL):** Nuestra columna vertebral relacional. Funciona 100% en la nube y maneja toda la persistencia de usuarios, roles, suscripciones y geolocalizaciones de donantes. 
 
-### 🧠 Motor de IA (Go)
-* **Go 1.26:** Pipeline cognitivo compilado de alto rendimiento (~1ms por sensor).
-* **pgx/v5:** Conexión directa a Neon DB para persistencia de insights.
+### 🧠 Motor GopherMind AI (Go)
+* **Go 1.26:** Pipeline cognitivo compilado de alto rendimiento (Zero-Copy).
+* **pgx/v5:** Conexión concurrente a Neon DB (con soporte estricto SSL/TLS) para persistencia de insights y telemetría.
 * **HMAC-SHA256:** Firma de integridad por insight para auditoría.
 
 ---
@@ -59,7 +59,7 @@ El proyecto se despliega unificando tecnologías escalables:
 El código está dividido en un monorepositorio con despliegue concurrente:
 - `/client`: Aplicación SPA y estilos.
 - `/server`: Rutas Express, esquemas de bases de datos de Neondb (`/db/schema.ts`) y utilidades.
-- `/vertical_crop_ai`: Motor de IA en Go con pipeline cognitivo de 15 fases.
+- `/gophermind_ai`: Motor de IA en Go con pipeline cognitivo de 15 fases.
   - `/cmd/server`: Punto de entrada HTTP (puerto 8090).
   - `/internal/pipeline`: Fases 0–14 del pipeline cognitivo.
   - `/internal/math`: CUSUM, Hampel, Bayesian Weight Tracker.
@@ -75,7 +75,7 @@ El código está dividido en un monorepositorio con despliegue concurrente:
 
 2. Instalar dependencias de Go:
    ```bash
-   cd vertical_crop_ai && go mod tidy
+   cd gophermind_ai && go mod tidy
    ```
 
 3. Definir las variables de entorno en tus propios ficheros `.env`:
@@ -96,10 +96,10 @@ El código está dividido en un monorepositorio con despliegue concurrente:
    ```bash
    npm run dev
    ```
-   Esto inicia concurrentemente:
+   Esto inicia concurrentemente usando variables de entorno inyectadas globalmente:
    - 🟦 **React** (Vite) en `http://localhost:5173`
    - 🟩 **Express** (Node) en `http://localhost:3000`
-   - 🟪 **Go AI Engine** en `http://localhost:8090`
+   - 🟪 **GopherMind AI** (Go) en `http://localhost:8090`
 
 ## 📡 API Endpoints del Motor de IA
 
