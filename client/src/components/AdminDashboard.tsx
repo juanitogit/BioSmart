@@ -127,22 +127,28 @@ export function AdminDashboard() {
                     </TableCell>
                     <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => {
-                          setEditingUser(u);
-                          setEditRole(u.role);
-                          setEditPlan("none");
-                        }}
-                        className="text-xs font-bold text-primary hover:underline"
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteUser(u.id)}
-                        className="text-xs font-bold text-red-500 hover:underline flex items-center gap-1"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      {u.role !== 'admin' ? (
+                        <button 
+                          onClick={() => {
+                            setEditingUser(u);
+                            setEditRole(u.role);
+                            setEditPlan("none");
+                          }}
+                          className="text-xs font-bold text-primary hover:underline"
+                        >
+                          Editar
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground mr-2">Protegido</span>
+                      )}
+                      {u.role !== 'admin' && (
+                        <button 
+                          onClick={() => handleDeleteUser(u.id)}
+                          className="text-xs font-bold text-red-500 hover:underline flex items-center gap-1"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

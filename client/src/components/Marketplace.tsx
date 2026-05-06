@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, ShoppingCart, Tag, Plus, Edit, Trash2, Star, CheckCircle2, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 
 interface Product {
   id: number;
@@ -41,6 +42,7 @@ export function Marketplace() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'kits', stock: '10', image: '' });
   const [uploading, setUploading] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     fetchProducts();
@@ -251,7 +253,7 @@ export function Marketplace() {
                 transition={{ duration: 0.2 }}
               >
                 <Card className="h-full group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden rounded-2xl flex flex-col">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted cursor-pointer" onClick={() => setLocation(`/productos-detalle/${product.id}`)}>
                     {product.image ? (
                       <img 
                         src={product.image} 
@@ -276,7 +278,7 @@ export function Marketplace() {
                     )}
                   </div>
                   
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-2 cursor-pointer" onClick={() => setLocation(`/productos-detalle/${product.id}`)}>
                     <div className="flex justify-between items-start mb-1">
                       <CardTitle className="text-lg font-bold truncate leading-tight">
                         {product.name}

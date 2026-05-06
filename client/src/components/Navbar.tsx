@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, Leaf, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
-import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart } from "lucide-react";
+import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity } from "lucide-react";
 import { Button } from "./ui/button";
 import { 
   DropdownMenu, 
@@ -40,6 +40,7 @@ export function Navbar() {
     { name: "Marketplace", href: "/marketplace", icon: <ShoppingBag size={16} />, type: 'link' },
     { name: "Educación", href: "/education", icon: <GraduationCap size={16} />, type: 'link' },
     { name: "Donaciones", href: "/donations", icon: <Heart size={16} />, type: 'link' },
+    { name: "GopherMind AI", href: "/telemetry", icon: <Activity size={16} />, type: 'link' },
     { name: "Sistema", href: "/#dashboard", icon: <LayoutDashboard size={16} />, type: 'scroll' },
   ];
 
@@ -209,15 +210,26 @@ export function Navbar() {
               {navLinks.map((link) => (
                 <button
                   key={link.name}
-                  onClick={() => scrollTo(link.href)}
+                  onClick={() => {
+                    if (link.type === 'link') {
+                      setLocation(link.href);
+                      setMobileMenuOpen(false);
+                    } else {
+                      scrollTo(link.href.replace('/', ''));
+                    }
+                  }}
                   className="text-left text-lg font-medium text-foreground py-2 border-b border-border/50"
                 >
                   {link.name}
                 </button>
               ))}
-              <button className="bg-primary text-primary-foreground px-5 py-3 rounded-lg font-medium text-center mt-2">
-                Unirse a la Red
-              </button>
+              <Link href="/auth">
+                <button 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="bg-primary w-full text-primary-foreground px-5 py-3 rounded-lg font-medium text-center mt-2">
+                  Unirse a la Red
+                </button>
+              </Link>
             </div>
           </motion.div>
         )}

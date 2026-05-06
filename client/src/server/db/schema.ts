@@ -7,6 +7,9 @@ import {
   boolean,
   timestamp,
   decimal,
+  doublePrecision,
+  real,
+  uuid,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -25,6 +28,20 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "trial",
   "expired",
   "cancelled",
+]);
+
+export const insightRegimeEnum = pgEnum("insight_regime", [
+  "STABLE",
+  "VOLATILE",
+  "TRENDING",
+  "NOISY",
+  "TRANSITIONAL",
+]);
+
+export const insightDecisionEnum = pgEnum("insight_decision", [
+  "LOG",
+  "MONITOR",
+  "CRITICAL",
 ]);
 
 // ============ USERS ============
@@ -212,6 +229,22 @@ export const services = pgTable("services", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ============ AI INSIGHTS (Vertical Crop Pipeline) ============
+
+export const aiInsights = pgTable("ai_insights", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  sensorId: text("sensor_id").notNull(),
+  value: doublePrecision("value").notNull(),
+  regime: text("regime").notNull(), // STABLE, VOLATILE, TRENDING, NOISY, TRANSITIONAL
+  confidence: real("confidence").notNull(),
+  decision: text("decision").notNull(), // LOG, MONITOR, CRITICAL
+  hmacSignature: text("hmac_signature"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ============ RELATIONS ============
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -224,6 +257,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   chatHistory: many(chatHistory),
   aiSuggestions: many(aiSuggestions),
   notifications: many(notifications),
+  aiInsights: many(aiInsights),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -263,4 +297,8 @@ export const aiUsageRelations = relations(aiUsage, ({ one }) => ({
 
 export const chatHistoryRelations = relations(chatHistory, ({ one }) => ({
   user: one(users, { fields: [chatHistory.userId], references: [users.id] }),
+}));
+
+export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
+  user: one(users, { fields: [aiInsights.userId], references: [users.id] }),
 }));

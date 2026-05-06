@@ -3,6 +3,8 @@ import { db } from "../db/index.js";
 import { donations, users } from "../db/schema.js";
 import { desc, sum, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
+import { sendEmail } from "../services/email.js";
+import jwt from "jsonwebtoken";
 
 export const donationsRouter = Router();
 
@@ -96,5 +98,120 @@ donationsRouter.get("/history", authMiddleware, async (_req, res) => {
   } catch (error) {
     console.error("Error fetching donation history:", error);
     res.json({ donations: [] });
+  }
+});
+
+// POST /api/donations
+donationsRouter.post("/", async (req, res) => {
+  try {
+    const { amount, lat: bodyLat, lng: bodyLng } = req.body;
+    if (!amount || isNaN(amount)) {
+      res.status(400).json({ error: "Cantidad inválida" });
+      return;
+    }
+
+    if (!db) {
+      res.json({ message: "Donación simulada exitosamente" });
+      return;
+    }
+
+    let currentUserId = 1; // Default "Anónimo" 
+    const token = req.headers.authorization?.split(" ")[1];
+    
+    if (token) {
+      try {
+        const secret = process.env.JWT_SECRET || "default_secret_dev";
+        const decoded = jwt.verify(token, secret) as any;
+        if (decoded && decoded.id) {
+          currentUserId = decoded.id;
+        }
+      } catch (err) {
+        console.warn("Token parsing error during donation:", err);
+      }
+    }
+
+    // Default coordinates or user provided coordinates
+    const isRealLocation = bodyLat != null && bodyLng != null;
+    const lat = isRealLocation ? Number(bodyLat) : null;
+    const lng = isRealLocation ? Number(bodyLng) : null;
+
+    let finalCity = "Ubicación web";
+    let finalCountry = "Global";
+
+    if (isRealLocation) {
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${bodyLat}&lon=${bodyLng}&zoom=10`, {
+          headers: { "User-Agent": "BioSmart-App/1.0" }
+        });
+        if (geoRes.ok) {
+          const geoJson = await geoRes.json();
+          if (geoJson && geoJson.address) {
+            finalCity = geoJson.address.city || geoJson.address.town || geoJson.address.state || finalCity;
+            finalCountry = geoJson.address.country || finalCountry;
+          }
+        }
+      } catch (err) {
+        console.warn("Geocoding failed:", err);
+      }
+    } else {
+      // Si no es real, que quede nulo para que globe.html le asigne el nombre aleatorio correcto
+      finalCity = "Desconocida";
+      finalCountry = "Global";
+    }
+
+    await db.insert(donations).values({
+      userId: currentUserId,
+      amount: amount.toString(),
+      source: "direct",
+      message: "Aporte directo desde el Dashboard",
+      city: finalCity,
+      country: finalCountry,
+      lat,
+      lng,
+      color: "#00f2fe",
+      emoji: "📍",
+    });
+
+    res.json({ message: "¡Gracias por tu donación!" });
+  } catch (error) {
+    console.error("Error procesando donación:", error);
+    res.status(500).json({ error: "Error al procesar la donación" });
+  }
+});
+
+// POST /api/donations/subscribe
+donationsRouter.post("/subscribe", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ error: "Email es requerido" });
+      return;
+    }
+
+    // Send confirmation email
+    await sendEmail({
+      to: email,
+      subject: "🔔 Notificaciones Activadas - BioSmart",
+      html: `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #0a0f1a; color: #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #16a34a, #0ea5e9); padding: 40px 32px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px; color: white;">🌱 ¡Notificaciones Activadas!</h1>
+          </div>
+          <div style="padding: 32px;">
+            <p style="font-size: 16px; line-height: 1.6;">Hola,</p>
+            <p style="font-size: 16px; line-height: 1.6;">Has activado exitosamente las notificaciones de <strong>BioSmart</strong> para el correo ${email}.</p>
+            <div style="background: #111827; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #1f2937;">
+              <p style="font-size: 15px; color: #9ca3af; margin: 0;">A partir de ahora recibirás reportes de impacto, avisos tecnológicos y novedades de tu plataforma de agricultura inteligente.</p>
+            </div>
+            <p style="font-size: 14px; color: #6b7280;">Gracias por unirte a nuestra comunidad. 🌍</p>
+          </div>
+        </div>
+      `,
+    });
+
+    res.json({ message: "Notificaciones activadas. Revisa tu email." });
+  } catch (error) {
+    console.error("Error al suscribir:", error);
+    res.status(500).json({ error: "Error interno al suscribir" });
   }
 });
