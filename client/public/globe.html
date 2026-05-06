@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Globe 3D interactivo de donaciones alrededor del mundo con transición a mapa de relieve">
+    <meta name="description"
+        content="Globe 3D interactivo de donaciones alrededor del mundo con transición a mapa de relieve">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -192,7 +194,7 @@
             height: 22px;
             border-radius: 50%;
             border: 3px solid #fff;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 20px rgba(79, 172, 254, 0.3);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(79, 172, 254, 0.3);
             position: relative;
             z-index: 2;
             cursor: pointer;
@@ -217,8 +219,15 @@
         }
 
         @keyframes markerPulse {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.6; }
-            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
         }
 
         .marker-label {
@@ -261,7 +270,7 @@
             pointer-events: none;
         }
 
-        .header > * {
+        .header>* {
             pointer-events: auto;
         }
 
@@ -592,7 +601,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Zoom level indicator */
@@ -685,21 +696,26 @@
             .side-panel {
                 display: none;
             }
+
             .stats-bar {
                 gap: 16px;
             }
+
             .stat-value {
                 font-size: 16px;
             }
+
             .header {
                 padding: 15px 20px;
             }
+
             .zoom-indicator {
                 display: none;
             }
         }
     </style>
 </head>
+
 <body>
 
     <!-- Loading -->
@@ -749,18 +765,18 @@
             🏠 Reiniciar Vista
         </button>
         <button class="control-btn" id="btn-markers" onclick="toggleMarkers()">
-            📍 Marcadores
+            Marcadores
         </button>
     </div>
 
     <!-- Back to globe button (Map mode) -->
     <button class="back-to-globe" id="btn-back-globe" onclick="switchToGlobe()">
-        🌍 Volver al Globo 3D
+        Volver al Globo 3D
     </button>
 
     <!-- Map transition hint -->
     <div class="map-indicator" id="map-indicator">
-        <span class="icon">🗺️</span> Acércate más para ver el mapa con relieve...
+        <span class="icon"></span> Acércate más para ver el mapa con relieve...
     </div>
 
     <!-- Zoom indicator -->
@@ -768,7 +784,7 @@
         <div class="zoom-bar">
             <div class="zoom-fill" id="zoom-fill" style="height: 30%"></div>
             <div class="zoom-threshold" style="bottom: 75%">
-                <span class="zoom-threshold-label">🗺️ Mapa</span>
+                <span class="zoom-threshold-label">Mapa</span>
             </div>
         </div>
         <div class="zoom-label">ZOOM</div>
@@ -798,32 +814,33 @@
             try {
                 // Change location depending on URL origin to target backend correctly
                 const response = await fetch(window.location.origin + '/api/donations');
-                if(!response.ok) throw new Error('Network error');
+                if (!response.ok) throw new Error('Network error');
                 const json = await response.json();
-                
-                // Transform json.recentDonations to match globe schema
+
                 donations = json.recentDonations.map(d => {
-                    // Random location if not provided in DB
-                    const loc = cities[Math.floor(Math.random() * cities.length)];
+                    // Random location if not provided in DB or if it's too 0.0
+                    const hasValidLocation = d.lat != null && d.lng != null && d.lat !== 0 && d.lng !== 0;
+                    const loc = hasValidLocation ? null : cities[Math.floor(Math.random() * cities.length)];
+
                     return {
                         name: d.userName || "Donante Anónimo",
                         amount: parseFloat(d.amount),
-                        city: loc.city,
-                        country: loc.country,
-                        lat: loc.lat + (Math.random() - 0.5) * 5, // Slightly randomize spread
-                        lng: loc.lng + (Math.random() - 0.5) * 5,
+                        city: d.city && d.city !== "Ubicación web" && d.city !== "Desconocida" ? d.city : (loc ? loc.city : "Aporte Digital"),
+                        country: d.country && d.country !== "Global" ? d.country : (loc ? loc.country : "Earth"),
+                        lat: hasValidLocation ? parseFloat(d.lat) : (loc.lat + (Math.random() - 0.5) * 5),
+                        lng: hasValidLocation ? parseFloat(d.lng) : (loc.lng + (Math.random() - 0.5) * 5),
                         message: d.message || "Por un futuro más sostenible y verde.",
                         time: new Date(d.createdAt).toLocaleDateString(),
-                        color: loc.color,
-                        emoji: loc.emoji
+                        color: d.color || (loc ? loc.color : "#00f2fe"),
+                        emoji: d.emoji || (loc ? loc.emoji : "🌟")
                     }
                 });
 
                 // If no array, load some hardcoded backups
-                if(donations.length === 0) {
-                     donations = [
+                if (donations.length === 0) {
+                    donations = [
                         { name: "Sebastián Reyes", amount: 250, city: "Ciudad de México", country: "México", lat: 19.4326, lng: -99.1332, message: "¡Feliz de apoyar esta causa urbana!", time: "Hoy", color: "#ff6b6b", emoji: "🇲🇽" }
-                     ];
+                    ];
                 }
 
                 // Add fake API total if backend overrides it
@@ -1112,7 +1129,7 @@
                         <div class="marker-pulse" style="background: ${d.color};"></div>
                         <div class="marker-dot" style="background: ${d.color};"></div>
                         <div class="marker-label">
-                            <span class="marker-label-name">${d.emoji} ${d.name.split(' ')[0]}</span>
+                            <span class="marker-label-name">${d.name.split(' ')[0]}</span>
                             <span class="marker-label-amount">$${d.amount}</span>
                         </div>
                     </div>
@@ -1130,10 +1147,10 @@
 
                 const popupContent = `
                     <div class="popup-header">
-                        <span class="popup-emoji">${d.emoji}</span>
+                        <!-- Removed emoji -->
                         <div>
                             <div class="popup-name">${d.name}</div>
-                            <div class="popup-location">📍 ${d.city}, ${d.country}</div>
+                            <div class="popup-location">${d.city}, ${d.country}</div>
                         </div>
                     </div>
                     <div class="popup-amount">$${d.amount}</div>
@@ -1156,11 +1173,11 @@
                 const lat = 90 - (Math.acos(point.y / 1) * 180 / Math.PI);
                 const theta = Math.atan2(point.z, -point.x);
                 let lng = (theta * 180 / Math.PI) - 180;
-                
+
                 // Wrap to -180..180
-                while(lng < -180) lng += 360;
-                while(lng > 180) lng -= 360;
-                
+                while (lng < -180) lng += 360;
+                while (lng > 180) lng -= 360;
+
                 return { lat, lng };
             }
             return { lat: 20, lng: 0 };
@@ -1217,7 +1234,7 @@
                 const dir = camera.position.clone().normalize();
                 camera.position.copy(dir.multiplyScalar(2.5));
             }
-            
+
             controls.update();
 
             if (autoRotate) {
@@ -1237,10 +1254,10 @@
                 card.innerHTML = `
                     <div class="card-header">
                         <div class="donor-info">
-                            <div class="donor-avatar" style="background: ${d.color}20; border: 2px solid ${d.color};">${d.emoji}</div>
+                            <div class="donor-avatar" style="background: ${d.color}20; border: 2px solid ${d.color}; color: ${d.color}; font-weight: bold;">${d.name.charAt(0)}</div>
                             <div>
                                 <div class="donor-name">${d.name}</div>
-                                <div class="donor-location">📍 ${d.city}, ${d.country}</div>
+                                <div class="donor-location">${d.city}, ${d.country}</div>
                             </div>
                         </div>
                         <div class="donation-amount">$${d.amount}</div>
@@ -1257,7 +1274,7 @@
             const totalAmount = window.serverTotals ? window.serverTotals.totalDonated : donations.reduce((sum, d) => sum + d.amount, 0);
             const countries = new Set(donations.map(d => d.country)).size;
             const donors = window.serverTotals ? window.serverTotals.donationsCount : donations.length;
-            
+
             animateNumber('total-amount', totalAmount, '$');
             animateNumber('total-donors', donors, '');
             animateNumber('total-countries', countries, '');
@@ -1366,9 +1383,9 @@
             if (intersects.length > 0) {
                 const idx = intersects[0].object.userData.donationIndex;
                 const d = donations[idx];
-                document.getElementById('tooltip-name').textContent = d.emoji + ' ' + d.name;
+                document.getElementById('tooltip-name').textContent = d.name;
                 document.getElementById('tooltip-amount').textContent = '$' + d.amount;
-                document.getElementById('tooltip-location').textContent = '📍 ' + d.city + ', ' + d.country;
+                document.getElementById('tooltip-location').textContent = d.city + ', ' + d.country;
                 tooltip.style.left = (event.clientX + 15) + 'px';
                 tooltip.style.top = (event.clientY - 10) + 'px';
                 tooltip.classList.add('visible');
@@ -1415,7 +1432,7 @@
 
                 // Show hint when getting close
                 if (dist < mapHintThreshold && dist > mapTransitionThreshold) {
-                    indicator.textContent = '🗺️ Acércate más para ver el mapa con relieve...';
+                    indicator.textContent = 'Acércate más para ver el mapa con relieve...';
                     indicator.classList.add('visible');
                 } else {
                     indicator.classList.remove('visible');
@@ -1435,4 +1452,5 @@
         loadBackendData();
     </script>
 </body>
+
 </html>

@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Leaf, Twitter, Linkedin, Instagram, Mail, MapPin, ArrowUpRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { apiPost } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function FooterSection() {
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const handleSubscribe = async () => {
+    if (!email || !email.includes('@')) {
+      toast.error('Por favor ingresa un email válido');
+      return;
+    }
+    
+    setIsSubscribing(true);
+    try {
+      await apiPost('/donations/subscribe', { email });
+      toast.success('¡Notificaciones activadas! Revisa tu correo.');
+      setEmail('');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al suscribirse');
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <footer id="contact" className="bg-zinc-950 text-zinc-400 py-20 border-t border-zinc-900">
       <div className="container mx-auto px-6">
@@ -57,11 +80,17 @@ export function FooterSection() {
           <div className="flex w-full md:w-auto">
             <input 
               type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com" 
               className="bg-zinc-950 border border-zinc-800 rounded-l-lg px-4 py-3 text-white focus:outline-none focus:border-primary w-full md:w-64"
             />
-            <button className="bg-primary text-primary-foreground px-6 py-3 rounded-r-lg font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
-              Suscribir <ArrowUpRight size={16} />
+            <button 
+              onClick={handleSubscribe}
+              disabled={isSubscribing}
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-r-lg font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {isSubscribing ? 'Suscribiendo...' : 'Suscribir'} <ArrowUpRight size={16} />
             </button>
           </div>
         </div>

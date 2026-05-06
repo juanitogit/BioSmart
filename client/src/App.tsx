@@ -1,4 +1,5 @@
 import { Route, Router } from 'wouter';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from './components/theme-provider';
 import { AuthProvider } from './hooks/use-auth';
 import { Toaster } from './components/ui/sonner';
@@ -13,17 +14,22 @@ import { Navbar } from './components/Navbar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { DonationsTracker } from './components/DonationsTracker';
 import { Marketplace } from './components/Marketplace';
+import { CropIntelDashboard } from './components/CropIntelDashboard';
 import { Education } from './components/Education';
 import { PricingSection } from './components/PricingSection';
 import { AIChatbot } from './components/AIChatbot';
 import AuthPage from './pages/auth-page';
 import AuthSuccessPage from './pages/auth-success';
+import ProductDetailPage from './pages/product-detail';
+
+const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="app-theme">
-      <AuthProvider>
-        <Router>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="app-theme">
+        <AuthProvider>
+          <Router>
           <Route path="/">
             {() => <HomePage />}
           </Route>
@@ -39,11 +45,17 @@ export default function App() {
           <Route path="/marketplace">
             {() => <MarketplacePage />}
           </Route>
+          <Route path="/productos-detalle/:id">
+            {() => <ProductDetailPage />}
+          </Route>
           <Route path="/education">
             {() => <EducationPage />}
           </Route>
           <Route path="/donations">
             {() => <DonationsPage />}
+          </Route>
+          <Route path="/telemetry">
+            {() => <TelemetryPage />}
           </Route>
           <Route path="/admin">
             {() => <AdminPage />}
@@ -53,6 +65,7 @@ export default function App() {
         <Toaster />
       </AuthProvider>
     </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -153,6 +166,16 @@ function AdminPage() {
       <div className="pt-20">
         <AdminDashboard />
       </div>
+    </div>
+  );
+}
+
+function TelemetryPage() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <CropIntelDashboard />
+      <FooterSection />
     </div>
   );
 }

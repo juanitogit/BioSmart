@@ -80,11 +80,11 @@ authRouter.post("/login", async (req, res) => {
     if (!db) {
       // Mock mode
       const token = jwt.sign(
-        { id: 1, email, role: "user", name: "Usuario Demo" },
+        { id: 1, email, role: "user", name: "Anónimo" },
         process.env.JWT_SECRET || "default_secret_dev",
         { expiresIn: "7d" }
       );
-      res.json({ token, user: { id: 1, name: "Usuario Demo", email, role: "user" } });
+      res.json({ token, user: { id: 1, name: "Anónimo", email, role: "user" } });
       return;
     }
 

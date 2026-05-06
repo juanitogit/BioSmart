@@ -9,6 +9,7 @@ import { donationsRouter } from "./routes/donations.js";
 import { aiRouter } from "./routes/ai.js";
 import { adminRouter } from "./routes/admin.js";
 import { usersRouter } from "./routes/users.js";
+import { cropIntelRouter } from "./routes/crop-intel.js";
 import passport from "./lib/passport.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,7 @@ app.use("/api/donations", donationsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/crop-intel", cropIntelRouter);
 
 // Health check
 app.get("/api/health", (_req, res) => {

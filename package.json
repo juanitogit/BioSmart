@@ -8,12 +8,14 @@
     "server"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "npx kill-port 8090 3000 5173 && npx dotenv-cli -e .env -- concurrently -n client,server,go-ai -c cyan,green,magenta \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:go\"",
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "npm run dev --workspace=server",
+    "dev:go": "cd gophermind_ai && go run cmd/server/main.go",
     "build": "npm run build --workspace=client && npm run build --workspace=server",
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
+    "build:go": "cd vertical_crop_ai && go build -o vertical_crop_ai.exe ./cmd/server/main.go",
     "start": "npm run start --workspace=server",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",

@@ -5,7 +5,8 @@ import {
   BarChart, Bar, Cell
 } from 'recharts';
 import { Activity, Droplets, Thermometer, Sun, Wind, Beaker, Sprout, Zap, AlertTriangle, Heart, Users } from 'lucide-react';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
+import { toast } from 'sonner';
 
 // Generador de datos simulados
 const generateData = () => {
@@ -317,17 +318,56 @@ function ActionItem({ label, status, time, active = false }: any) {
 function DonationsWidget() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [donationAmount, setDonationAmount] = useState<string>('');
+  const [isDonating, setIsDonating] = useState(false);
 
-  useEffect(() => {
+  const fetchDonations = () => {
     apiGet('/donations')
       .then(setData)
       .catch((err) => {
         console.error(err);
-        // Fallback simulate data if no server
         setData({ totalDonated: 1250, donationsCount: 45 });
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDonations();
   }, []);
+
+  const handleDonate = async () => {
+    if (!donationAmount || isNaN(Number(donationAmount)) || Number(donationAmount) <= 0) {
+      toast.error('Por favor ingresa una cantidad válida');
+      return;
+    }
+    
+    setIsDonating(true);
+    let lat = null;
+    let lng = null;
+
+    try {
+      if ("geolocation" in navigator) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      }
+    } catch (e) {
+      console.log('Permiso de ubicación denegado o error:', e);
+    }
+
+    try {
+      await apiPost('/donations', { amount: donationAmount, lat, lng });
+      toast.success('¡Gracias por tu aporte!');
+      setDonationAmount('');
+      fetchDonations(); // Refresh stats
+    } catch (err: any) {
+      toast.error(err.message || 'Error al procesar donación');
+    } finally {
+      setIsDonating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -365,14 +405,18 @@ function DonationsWidget() {
             <input 
               type="number" 
               min="1"
+              value={donationAmount}
+              onChange={(e) => setDonationAmount(e.target.value)}
               placeholder="0.00" 
               className="flex h-11 w-full rounded-md border border-input bg-background pl-7 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" 
             />
           </div>
           <button 
+            onClick={handleDonate}
+            disabled={isDonating}
             className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 py-2"
           >
-            Donar Ahora
+            {isDonating ? 'Procesando...' : 'Donar Ahora'}
           </button>
         </div>
       </div>
