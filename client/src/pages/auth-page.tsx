@@ -49,7 +49,7 @@ export default function AuthPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth/google`;
+    window.location.href = `${import.meta.env.VITE_API_URL || "https://bio-smart-eight.vercel.app"}/api/auth/google`;
   };
 
   return (

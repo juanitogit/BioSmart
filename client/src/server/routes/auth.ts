@@ -163,7 +163,7 @@ authRouter.get(
     // Redirect to frontend with token in URL (simple approach) or cookie
     // Since it's a separate client/server, we can use a redirect with a search param 
     // or a specialized bridge page.
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL || "https://bio-smart-eight.vercel.app";
     res.redirect(`${frontendUrl}/auth-success?token=${token}`);
   }
 );
