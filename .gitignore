@@ -30,3 +30,5 @@ drizzle/
 
 # Misc
 .qodo/
+
+.vercel
