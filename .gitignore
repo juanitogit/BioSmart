@@ -30,5 +30,10 @@ drizzle/
 
 # Misc
 .qodo/
-
 .vercel
+
+# Binarios y archivos grandes
+*.apk
+*.zip
+log.json
+vercel_logs.txt

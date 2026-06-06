@@ -5,9 +5,13 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure env vars are loaded early for both local and Vercel environments
-dotenv.config({ path: path.join(__dirname, "../../../.env") });
-dotenv.config({ path: path.join(process.cwd(), ".env") });
+// Load .env only in local dev — Vercel injects env vars automatically
+try {
+  dotenv.config({ path: path.join(__dirname, "../../../.env") });
+  dotenv.config({ path: path.join(process.cwd(), ".env") });
+} catch (_) {
+  // Ignore if .env doesn't exist (Vercel)
+}
 
 import express from "express";
 import cors from "cors";
@@ -23,14 +27,13 @@ import passport from "./lib/passport.js";
 
 const app = express();
 
+// Trust Vercel's reverse proxy (needed for OAuth callback URLs)
+app.set("trust proxy", 1);
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
-
-// Servir archivos estáticos del cliente
-const clientDistPath = path.join(__dirname, "../../client/dist");
-app.use(express.static(clientDistPath));
 
 // API Routes
 app.use("/api/auth", authRouter);
@@ -45,11 +48,6 @@ app.use("/api/crop-intel", cropIntelRouter);
 // Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// SPA fallback: servir index.html para rutas no encontradas
-app.get(/^(?!\/api\/).*/, (_req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
 });
 
 export default app;
