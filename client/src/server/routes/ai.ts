@@ -216,3 +216,12 @@ aiRouter.get("/usage", authMiddleware, async (req: AuthRequest, res) => {
     res.json({ totalChats: 0, totalSuggestions: 0, totalTokens: 0, recentUsage: [] });
   }
 });
+
+// GET /api/ai/ping - Health check for AI service
+aiRouter.get("/ping", (_req, res) => {
+  res.json({
+    status: process.env.GROQ_API_KEY ? "online" : "limited",
+    engine: "groq",
+    timestamp: new Date().toISOString(),
+  });
+});
