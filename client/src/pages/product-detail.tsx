@@ -4,14 +4,19 @@ import { apiGet, apiPost } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { FooterSection } from '@/components/FooterSection';
 import { Button } from '@/components/ui/button';
-import { Tag, ShoppingCart, Star, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Tag, ShoppingCart, Star, CheckCircle2, ArrowLeft, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ProductDetailPage() {
   const [match, params] = useRoute('/productos-detalle/:id');
   const [, setLocation] = useLocation();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const { addItem } = useCart();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (params?.id) {
@@ -37,14 +42,21 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleBuy = async () => {
-    try {
-      await apiPost(`/products/${product.id}/buy`, { quantity: 1 });
-      toast.success('¡Compra realizada con éxito!');
-      fetchProduct();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al comprar');
+  const handleAddToCart = () => {
+    if (!user) {
+      toast.error('Por favor inicia sesión para comprar');
+      return;
     }
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category || 'general',
+      stock: product.stock,
+      sellerId: product.sellerId,
+    }, quantity);
+    toast.success(`${product.name} (×${quantity}) agregado al carrito`);
   };
 
   if (loading) {
@@ -121,13 +133,34 @@ export default function ProductDetailPage() {
               </div>
               
               <div className="flex flex-col gap-3">
+                 {/* Quantity Selector */}
+                 <div className="flex items-center gap-3 mb-2">
+                   <span className="text-sm font-medium text-muted-foreground">Cantidad:</span>
+                   <div className="flex items-center gap-1 bg-muted/50 rounded-full border border-border p-1">
+                     <button
+                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                       disabled={quantity <= 1}
+                       className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-background transition-colors disabled:opacity-40"
+                     >
+                       <Minus size={14} />
+                     </button>
+                     <span className="w-10 text-center font-bold font-mono text-lg">{quantity}</span>
+                     <button
+                       onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                       disabled={quantity >= product.stock}
+                       className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-background transition-colors disabled:opacity-40"
+                     >
+                       <Plus size={14} />
+                     </button>
+                   </div>
+                 </div>
                  <Button 
                     className="w-full sm:w-auto h-14 px-10 rounded-full text-lg font-bold gap-3 shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transition-all"
-                    onClick={handleBuy}
+                    onClick={handleAddToCart}
                     disabled={product.stock <= 0}
                   >
                     <ShoppingCart size={22} />
-                    {product.stock > 0 ? 'Comprar Ahora' : 'Sin Stock'}
+                    {product.stock > 0 ? 'Agregar al Carrito' : 'Sin Stock'}
                  </Button>
                  <div className="text-xs text-muted-foreground w-full text-center flex items-center justify-center gap-1.5 font-medium">
                     <CheckCircle2 size={14} className="text-green-500" />

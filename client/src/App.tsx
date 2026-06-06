@@ -2,6 +2,7 @@ import { Route, Router } from 'wouter';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from './components/theme-provider';
 import { AuthProvider } from './hooks/use-auth';
+import { CartProvider } from './hooks/use-cart';
 import { Toaster } from './components/ui/sonner';
 import { HeroSection } from './components/HeroSection';
 import { ImpactSection } from './components/ImpactSection';
@@ -18,9 +19,11 @@ import { CropIntelDashboard } from './components/CropIntelDashboard';
 import { Education } from './components/Education';
 import { PricingSection } from './components/PricingSection';
 import { AIChatbot } from './components/AIChatbot';
+import { CartDrawer } from './components/CartDrawer';
 import AuthPage from './pages/auth-page';
 import AuthSuccessPage from './pages/auth-success';
 import ProductDetailPage from './pages/product-detail';
+import CheckoutPage from './pages/checkout';
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="app-theme">
         <AuthProvider>
+          <CartProvider>
           <Router>
           <Route path="/">
             {() => <HomePage />}
@@ -48,6 +52,9 @@ export default function App() {
           <Route path="/productos-detalle/:id">
             {() => <ProductDetailPage />}
           </Route>
+          <Route path="/checkout">
+            {() => <CheckoutPage />}
+          </Route>
           <Route path="/education">
             {() => <EducationPage />}
           </Route>
@@ -61,8 +68,10 @@ export default function App() {
             {() => <AdminPage />}
           </Route>
         </Router>
+        <CartDrawer />
         <AIChatbot />
         <Toaster />
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
     </QueryClientProvider>

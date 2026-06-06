@@ -1,7 +1,16 @@
-import express from "express";
-import cors from "cors";
+import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure env vars are loaded early for both local and Vercel environments
+dotenv.config({ path: path.join(__dirname, "../../../.env") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
+
+import express from "express";
+import cors from "cors";
 import { authRouter } from "./routes/auth.js";
 import { plansRouter } from "./routes/plans.js";
 import { productsRouter } from "./routes/products.js";
@@ -11,9 +20,6 @@ import { adminRouter } from "./routes/admin.js";
 import { usersRouter } from "./routes/users.js";
 import { cropIntelRouter } from "./routes/crop-intel.js";
 import passport from "./lib/passport.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 

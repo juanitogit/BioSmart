@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    email: string;
-    role: string;
-    name: string;
-  };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number;
+        email: string;
+        role: string;
+        name: string;
+      };
+    }
+  }
 }
+
+export type AuthRequest = Request;
 
 export function authMiddleware(
   req: AuthRequest,

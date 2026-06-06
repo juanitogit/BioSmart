@@ -10,10 +10,16 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "jsx": "react-jsx"
   },
-  "references": [
-    { "path": "./client" },
-    { "path": "./server" }
+  "include": [
+    "api/**/*",
+    "client/src/server/**/*",
+    "server/**/*"
+  ],
+  "exclude": [
+    "client/src/server/seed-*.ts",
+    "client/src/server/upgrade-admin.ts"
   ]
 }

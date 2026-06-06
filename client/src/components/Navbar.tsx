@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Leaf, Moon, Sun } from "lucide-react";
+import { Menu, X, Leaf, Moon, Sun, ShoppingCart } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { useCart } from "@/hooks/use-cart";
 import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity } from "lucide-react";
 import { Button } from "./ui/button";
 import { 
@@ -21,6 +22,7 @@ export function Navbar() {
   const [location, setLocation] = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout, isAdmin } = useAuth();
+  const { totalItems, setCartOpen } = useCart();
   
   const isHomePage = location === '/';
   const isDarkBg = isHomePage && !scrolled;
@@ -126,6 +128,21 @@ export function Navbar() {
             <span className="sr-only">Cambiar tema</span>
           </Button>
 
+          {/* Cart Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCartOpen(true)}
+            className={`rounded-full w-10 h-10 relative transition-colors ${isDarkBg ? 'hover:bg-white/10' : 'hover:bg-primary/10'}`}
+          >
+            <ShoppingCart className={`h-5 w-5 ${isDarkBg ? 'text-white' : 'text-foreground'}`} />
+            {totalItems > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-lg animate-in zoom-in">
+                {totalItems > 9 ? '9+' : totalItems}
+              </span>
+            )}
+          </Button>
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -186,6 +203,20 @@ export function Navbar() {
               <Sun className="h-5 w-5 text-yellow-500" />
             ) : (
               <Moon className={`h-5 w-5 ${isDarkBg ? 'text-white' : 'text-slate-700'}`} />
+            )}
+          </Button>
+          {/* Cart Button Mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCartOpen(true)}
+            className={`rounded-full w-10 h-10 relative ${isDarkBg ? 'hover:bg-white/10' : 'hover:bg-primary/10'}`}
+          >
+            <ShoppingCart className={`h-5 w-5 ${isDarkBg ? 'text-white' : 'text-foreground'}`} />
+            {totalItems > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-lg">
+                {totalItems > 9 ? '9+' : totalItems}
+              </span>
             )}
           </Button>
           <button

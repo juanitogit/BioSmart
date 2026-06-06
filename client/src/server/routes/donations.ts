@@ -132,8 +132,8 @@ donationsRouter.post("/", async (req, res) => {
 
     // Default coordinates or user provided coordinates
     const isRealLocation = bodyLat != null && bodyLng != null;
-    const lat = isRealLocation ? Number(bodyLat) : null;
-    const lng = isRealLocation ? Number(bodyLng) : null;
+    const lat = isRealLocation ? String(bodyLat) : null;
+    const lng = isRealLocation ? String(bodyLng) : null;
 
     let finalCity = "Ubicación web";
     let finalCountry = "Global";

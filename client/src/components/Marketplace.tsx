@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, ShoppingCart, Tag, Plus, Edit, Trash2, Star, CheckCircle2, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { useCart } from '@/hooks/use-cart';
 import { useLocation } from 'wouter';
 
 interface Product {
@@ -30,6 +31,7 @@ interface Product {
 
 export function Marketplace() {
   const { user, isSeller } = useAuth();
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,14 +167,21 @@ export function Marketplace() {
     setShowForm(true);
   };
 
-  const handleBuy = async (productId: number) => {
-    try {
-      await apiPost(`/products/${productId}/buy`, { quantity: 1 });
-      toast.success('¡Compra realizada con éxito!');
-      fetchProducts();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al comprar');
+  const handleAddToCart = (product: Product) => {
+    if (!user) {
+      toast.error('Por favor inicia sesión para comprar');
+      return;
     }
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      stock: product.stock,
+      sellerId: product.sellerId,
+    });
+    toast.success(`${product.name} agregado al carrito`);
   };
 
   const displayProducts = showMyProducts ? myProducts : products;
@@ -312,11 +321,11 @@ export function Marketplace() {
                     ) : (
                       <Button 
                         className="w-full gap-2 rounded-xl h-11" 
-                        onClick={() => handleBuy(product.id)}
+                        onClick={() => handleAddToCart(product)}
                         disabled={product.stock <= 0}
                       >
                         <ShoppingCart size={18} />
-                        {product.stock > 0 ? 'Comprar Ahora' : 'Sin Stock'}
+                        {product.stock > 0 ? 'Agregar al Carrito' : 'Sin Stock'}
                       </Button>
                     )}
                   </CardFooter>
