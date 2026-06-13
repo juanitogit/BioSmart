@@ -5,6 +5,7 @@ import { desc, sum, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { sendEmail } from "../services/email.js";
 import jwt from "jsonwebtoken";
+import { cache } from "../lib/cache.js";
 
 export const donationsRouter = Router();
 
@@ -22,6 +23,13 @@ const mockDonations = [
 // GET /api/donations
 donationsRouter.get("/", async (_req, res) => {
   try {
+    const cacheKey = "global_donations";
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      res.json(cachedData);
+      return;
+    }
+
     if (!db) {
       const total = mockDonations.reduce((s, d) => s + parseFloat(d.amount), 0);
       const byMonth = [
@@ -74,12 +82,14 @@ donationsRouter.get("/", async (_req, res) => {
       .groupBy(sql`TO_CHAR(${donations.createdAt}, 'Mon'), EXTRACT(MONTH FROM ${donations.createdAt})`)
       .orderBy(sql`EXTRACT(MONTH FROM ${donations.createdAt})`);
 
-    res.json({
-      totalDonated: total,
-      donationsCount: recentDonations.length,
+    const responseData = {
+      totalDonated: total || "0",
+      donationsCount: recentDonationsData.length,
       byMonth: monthlyData,
-      recentDonations,
-    });
+      recentDonations: recentDonationsData,
+    };
+    cache.set(cacheKey, responseData, 60);
+    res.json(responseData);
   } catch (error) {
     console.error("Error fetching donations:", error);
     res.json({ totalDonated: "0", donationsCount: 0, byMonth: [], recentDonations: [] });

@@ -3,12 +3,20 @@ import { db } from "../db/index.js";
 import { urbanFarms, users } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { authMiddleware, type AuthRequest } from "../middleware/auth.js";
+import { cache } from "../lib/cache.js";
 
 export const urbanFarmsRouter = Router();
 
 // GET /api/urban-farms — todas las granjas públicas
 urbanFarmsRouter.get("/", async (_req, res) => {
   try {
+    const cacheKey = "urban_farms_public";
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      res.json({ farms: cachedData });
+      return;
+    }
+
     if (!db) { res.json({ farms: [] }); return; }
 
     const farms = await db
@@ -32,6 +40,7 @@ urbanFarmsRouter.get("/", async (_req, res) => {
       .where(eq(urbanFarms.isPublic, true))
       .orderBy(desc(urbanFarms.createdAt));
 
+    cache.set(cacheKey, farms, 60);
     res.json({ farms });
   } catch (error) {
     console.error("Error fetching farms:", error);

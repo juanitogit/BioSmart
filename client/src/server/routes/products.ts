@@ -5,6 +5,8 @@ import { eq, desc } from "drizzle-orm";
 import { authMiddleware, sellerMiddleware, type AuthRequest } from "../middleware/auth.js";
 import { upload } from "../lib/cloudinary.js";
 
+import { cache } from "../lib/cache.js";
+
 export const productsRouter = Router();
 
 // POST /api/products/upload-image
@@ -24,6 +26,13 @@ productsRouter.post("/upload-image", authMiddleware, sellerMiddleware, upload.si
 // GET /api/products
 productsRouter.get("/", async (_req, res) => {
   try {
+    const cacheKey = "marketplace_products";
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      res.json({ products: cachedData });
+      return;
+    }
+
     if (!db) {
       res.json({ products: [] });
       return;
@@ -47,6 +56,7 @@ productsRouter.get("/", async (_req, res) => {
       .from(products)
       .where(eq(products.isActive, true))
       .orderBy(desc(products.createdAt));
+    cache.set(cacheKey, allProducts, 60);
     res.json({ products: allProducts });
   } catch (error) {
     console.error("Error fetching products:", error);
