@@ -172,11 +172,11 @@ plansRouter.post("/subscribe", authMiddleware, async (req: AuthRequest, res) => 
 
     // Send welcome email
     if (req.user) {
-      await sendEmail(
+      sendEmail(
         req.user.email,
         `Bienvenido a ${plan.name}`,
         emailTemplates.subscriptionSuccess(req.user.name, plan.name)
-      );
+      ).catch(err => console.error("Error asíncrono email:", err));
     }
 
     res.json({

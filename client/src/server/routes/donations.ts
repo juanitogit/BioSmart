@@ -189,7 +189,7 @@ donationsRouter.post("/subscribe", async (req, res) => {
     }
 
     // Send confirmation email
-    await sendEmail({
+    sendEmail({
       to: email,
       subject: "🔔 Notificaciones Activadas - BioSmart",
       html: `
@@ -207,7 +207,7 @@ donationsRouter.post("/subscribe", async (req, res) => {
           </div>
         </div>
       `,
-    });
+    }).catch(err => console.error("Error enviando email asíncrono:", err));
 
     res.json({ message: "Notificaciones activadas. Revisa tu email." });
   } catch (error) {
