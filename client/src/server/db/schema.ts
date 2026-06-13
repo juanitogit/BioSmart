@@ -11,6 +11,7 @@ import {
   real,
   uuid,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -99,7 +100,10 @@ export const subscriptions = pgTable("subscriptions", {
     .default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   cancelledAt: timestamp("cancelled_at"),
-});
+}, (table) => ({
+  userIdIdx: index("user_id_idx").on(table.userId),
+  statusIdx: index("status_idx").on(table.status)
+}));
 
 // ============ PRODUCTS ============
 
@@ -120,7 +124,10 @@ export const products = pgTable("products", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  categoryIdx: index("category_idx").on(table.category),
+  isActiveIdx: index("is_active_idx").on(table.isActive)
+}));
 
 // ============ SALES ============
 
@@ -138,7 +145,10 @@ export const sales = pgTable("sales", {
   quantity: integer("quantity").notNull().default(1),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  productIdIdx: index("product_id_idx").on(table.productId),
+  buyerIdIdx: index("buyer_id_idx").on(table.buyerId)
+}));
 
 // ============ DONATIONS ============
 
@@ -262,7 +272,10 @@ export const urbanFarms = pgTable("urban_farms", {
   area: decimal("area", { precision: 10, scale: 2 }), // m²
   isPublic: boolean("is_public").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  isPublicIdx: index("is_public_idx").on(table.isPublic),
+  createdAtIdx: index("created_at_idx").on(table.createdAt)
+}));
 
 // ============ RELATIONS ============
 
