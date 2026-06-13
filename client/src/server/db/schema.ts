@@ -245,6 +245,25 @@ export const aiInsights = pgTable("ai_insights", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ============ URBAN FARMS ============
+
+export const urbanFarms = pgTable("urban_farms", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  lat: decimal("lat", { precision: 10, scale: 6 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 6 }).notNull(),
+  city: varchar("city", { length: 100 }),
+  country: varchar("country", { length: 100 }),
+  farmType: varchar("farm_type", { length: 100 }).default("hidroponía"), // hidroponía, permacultura, huerto, invernadero
+  area: decimal("area", { precision: 10, scale: 2 }), // m²
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ============ RELATIONS ============
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -258,6 +277,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   aiSuggestions: many(aiSuggestions),
   notifications: many(notifications),
   aiInsights: many(aiInsights),
+  urbanFarms: many(urbanFarms),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -301,4 +321,8 @@ export const chatHistoryRelations = relations(chatHistory, ({ one }) => ({
 
 export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
   user: one(users, { fields: [aiInsights.userId], references: [users.id] }),
+}));
+
+export const urbanFarmsRelations = relations(urbanFarms, ({ one }) => ({
+  user: one(users, { fields: [urbanFarms.userId], references: [users.id] }),
 }));

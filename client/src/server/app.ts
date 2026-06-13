@@ -23,6 +23,7 @@ import { aiRouter } from "./routes/ai.js";
 import { adminRouter } from "./routes/admin.js";
 import { usersRouter } from "./routes/users.js";
 import { cropIntelRouter } from "./routes/crop-intel.js";
+import { urbanFarmsRouter } from "./routes/urban-farms.js";
 import passport from "./lib/passport.js";
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/ai", aiRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/crop-intel", cropIntelRouter);
+app.use("/api/urban-farms", urbanFarmsRouter);
 
 // Health check
 app.get("/api/health", (_req, res) => {

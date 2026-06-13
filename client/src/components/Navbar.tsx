@@ -5,7 +5,7 @@ import { Menu, X, Leaf, Moon, Sun, ShoppingCart } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity } from "lucide-react";
+import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity, MapPin } from "lucide-react";
 import { Button } from "./ui/button";
 import { 
   DropdownMenu, 
@@ -41,6 +41,7 @@ export function Navbar() {
     { name: "Inicio", href: "/", type: 'link' },
     { name: "Marketplace", href: "/marketplace", icon: <ShoppingBag size={16} />, type: 'link' },
     { name: "Educación", href: "/education", icon: <GraduationCap size={16} />, type: 'link' },
+    { name: "Granjas", href: "/granjas", icon: <MapPin size={16} />, type: 'link' },
     { name: "Donaciones", href: "/donations", icon: <Heart size={16} />, type: 'link' },
     { name: "GopherMind AI", href: "/telemetry", icon: <Activity size={16} />, type: 'link' },
     { name: "Sistema", href: "/#dashboard", icon: <LayoutDashboard size={16} />, type: 'scroll' },

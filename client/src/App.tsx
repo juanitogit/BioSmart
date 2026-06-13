@@ -16,6 +16,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { DonationsTracker } from './components/DonationsTracker';
 import { Marketplace } from './components/Marketplace';
 import { CropIntelDashboard } from './components/CropIntelDashboard';
+import { UrbanFarmsMap } from './components/UrbanFarmsMap';
 import { Education } from './components/Education';
 import { PricingSection } from './components/PricingSection';
 import { AIChatbot } from './components/AIChatbot';
@@ -66,6 +67,9 @@ export default function App() {
           </Route>
           <Route path="/admin">
             {() => <AdminPage />}
+          </Route>
+          <Route path="/granjas">
+            {() => <UrbanFarmsPage />}
           </Route>
         </Router>
         <CartDrawer />
@@ -184,6 +188,22 @@ function TelemetryPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <CropIntelDashboard />
+      <FooterSection />
+    </div>
+  );
+}
+
+function UrbanFarmsPage() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <div className="pt-32 pb-20 container mx-auto px-6">
+        <header className="mb-12 text-center max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Comunidad de Granjas</h1>
+          <p className="text-xl text-muted-foreground">Descubre e interactúa con granjas urbanas de la comunidad.</p>
+        </header>
+        <UrbanFarmsMap />
+      </div>
       <FooterSection />
     </div>
   );
