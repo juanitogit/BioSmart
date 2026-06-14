@@ -1,0 +1,47 @@
+implementadas
+Reviews y Ratings
+Los usuarios pueden dejar reseñas con calificación de 1 a 5 estrellas y comentarios en cada producto.
+El rating promedio se actualiza automáticamente en la base de datos.
+Las reseñas y la puntuación se muestran en la página de detalle del producto.
+Los usuarios pueden eliminar sus propias reseñas.
+Favoritos / Wishlist
+Botón de favoritos en la página de detalle de cada producto.
+Funcionalidad toggle: un clic agrega a favoritos y otro lo elimina.
+Página /favoritos con todos los productos guardados.
+Posibilidad de comprar directamente desde la lista de favoritos.
+Historial de Compras
+Página /mis-compras con todas las órdenes realizadas por el usuario.
+Visualización de imagen del producto, precio, vendedor y fecha de compra.
+Cálculo del total gastado acumulado.
+Exportación del historial en formato CSV.
+Dashboard de Vendedor
+Página /mis-ventas disponible para usuarios con rol Seller o Admin.
+Indicadores principales:
+Ingresos totales.
+Número de ventas.
+Productos activos.
+Ticket promedio.
+Gráfico de ingresos mensuales de los últimos 6 meses.
+Top 5 productos por ingresos.
+Visualización de ventas recientes.
+Exportación de Datos
+Página /exportar con las siguientes opciones:
+Telemetría en CSV (compatible con Excel, codificación UTF-8 BOM).
+Telemetría en JSON.
+Historial de compras en CSV.
+Filtros por período:
+7 días.
+14 días.
+30 días.
+90 días.
+365 días.
+Notificaciones Push
+Campana de notificaciones visible en el Navbar para usuarios autenticados.
+Integración con SSE (Server-Sent Events) para alertas críticas en tiempo real provenientes de GopherMind AI.
+Soporte para notificaciones nativas del navegador previa autorización del usuario.
+Panel de gestión con historial de alertas, marcado como leídas y limpieza de registros.
+Mapa de Granjas Urbanas
+Página /granjas con mapa interactivo basado en Leaflet.
+Visualización de granjas públicas de la comunidad mediante marcadores diferenciados por tipo.
+Registro de granjas propias (hidroponía, permacultura, huerto e invernadero).
+Selección automática de coordenadas mediante clic sobre el mapa.
