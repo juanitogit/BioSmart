@@ -25,6 +25,10 @@ import AuthPage from './pages/auth-page';
 import AuthSuccessPage from './pages/auth-success';
 import ProductDetailPage from './pages/product-detail';
 import CheckoutPage from './pages/checkout';
+import FavoritosPage from './pages/favoritos';
+import MisComprasPage from './pages/mis-compras';
+import MisVentasPage from './pages/mis-ventas';
+import ExportarPage from './pages/exportar';
 
 const queryClient = new QueryClient();
 
@@ -70,6 +74,18 @@ export default function App() {
           </Route>
           <Route path="/granjas">
             {() => <UrbanFarmsPage />}
+          </Route>
+          <Route path="/favoritos">
+            {() => <FavoritosPage />}
+          </Route>
+          <Route path="/mis-compras">
+            {() => <MisComprasPage />}
+          </Route>
+          <Route path="/mis-ventas">
+            {() => <MisVentasPage />}
+          </Route>
+          <Route path="/exportar">
+            {() => <ExportarPage />}
           </Route>
         </Router>
         <CartDrawer />

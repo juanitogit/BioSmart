@@ -8,6 +8,7 @@ import { sendWelcomeEmail } from "./mailer.js";
 
 dotenv.config();
 
+if (process.env.GOOGLE_CLIENT_ID) {
 passport.use(
   new GoogleStrategy(
     {
@@ -54,6 +55,9 @@ passport.use(
     }
   )
 );
+} else {
+  console.warn("⚠️ GOOGLE_CLIENT_ID no configurado. OAuth de Google deshabilitado.");
+}
 
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
