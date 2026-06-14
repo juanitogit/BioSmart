@@ -1,0 +1,39 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+client/dist/
+server/dist/
+
+# Variables de entorno (NUNCA subir a GitHub)
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Drizzle
+drizzle/
+
+# Misc
+.qodo/
+.vercel
+
+# Binarios y archivos grandes
+*.apk
+*.zip
+log.json
+vercel_logs.txt

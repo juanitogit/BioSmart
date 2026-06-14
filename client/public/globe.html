@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Globe 3D interactivo de donaciones alrededor del mundo con transición a mapa de relieve">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: #e0e0f0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            transition: opacity 0.6s ease;
+        }
+
+        #canvas-container.faded {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Leaflet Map Overlay */
+        #map-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        #map-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Map transition indicator */
+        .map-indicator {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            padding: 10px 24px;
+            background: rgba(15, 20, 45, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a0b8e8;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .map-indicator.visible {
+            opacity: 1;
+        }
+
+        .map-indicator .icon {
+            margin-right: 6px;
+        }
+
+        /* Back to globe button */
+        .back-to-globe {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.25), rgba(0, 242, 254, 0.15));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.4);
+            border-radius: 14px;
+            color: #e0e8ff;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 30px rgba(79, 172, 254, 0.2);
+        }
+
+        .back-to-globe:hover {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.4), rgba(0, 242, 254, 0.25));
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 8px 40px rgba(79, 172, 254, 0.3);
+        }
+
+        .back-to-globe.visible {
+            display: flex;
+        }
+
+        /* Custom Leaflet marker popup */
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: rgba(10, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 14px;
+            color: #e0e8ff;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .custom-popup .leaflet-popup-tip {
+            background: rgba(10, 15, 35, 0.95);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+        }
+
+        .custom-popup .leaflet-popup-content {
+            margin: 14px 18px;
+        }
+
+        .popup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .popup-emoji {
+            font-size: 24px;
+        }
+
+        .popup-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e0e8ff;
+        }
+
+        .popup-location {
+            font-size: 11px;
+            color: #6b7db3;
+        }
+
+        .popup-amount {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 8px 0;
+        }
+
+        .popup-message {
+            font-size: 12px;
+            color: #8b9cc7;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        /* Custom map marker */
+        .custom-marker {
+            position: relative;
+        }
+
+        .marker-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(79, 172, 254, 0.3);
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .marker-dot:hover {
+            transform: scale(1.3);
+        }
+
+        .marker-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: markerPulse 2s ease-out infinite;
+            z-index: 1;
+        }
+
+        @keyframes markerPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+
+        .marker-label {
+            position: absolute;
+            top: -8px;
+            left: 28px;
+            background: rgba(10, 15, 35, 0.9);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 8px;
+            padding: 4px 10px;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .marker-label-name {
+            color: #e0e8ff;
+        }
+
+        .marker-label-amount {
+            color: #4facfe;
+            margin-left: 6px;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(180deg, rgba(10, 10, 26, 0.95) 0%, rgba(10, 10, 26, 0) 100%);
+            pointer-events: none;
+        }
+
+        .header>* {
+            pointer-events: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 32px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6b7db3;
+            margin-top: 2px;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 320px;
+            max-height: 70vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 172, 254, 0.3) transparent;
+        }
+
+        .side-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: rgba(79, 172, 254, 0.3);
+            border-radius: 4px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #4facfe;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+        }
+
+        .donation-card {
+            background: rgba(15, 20, 45, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .donation-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .donation-card:hover {
+            border-color: rgba(79, 172, 254, 0.4);
+            transform: translateX(-5px);
+            box-shadow: 0 8px 32px rgba(79, 172, 254, 0.15);
+        }
+
+        .donation-card:hover::before {
+            opacity: 1;
+        }
+
+        .donation-card.active {
+            border-color: rgba(79, 172, 254, 0.6);
+            box-shadow: 0 8px 32px rgba(79, 172, 254, 0.25);
+        }
+
+        .donation-card.active::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .donor-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .donor-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .donor-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e8ff;
+        }
+
+        .donor-location {
+            font-size: 11px;
+            color: #6b7db3;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .donation-amount {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-message {
+            font-size: 12px;
+            color: #8b9cc7;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .card-time {
+            font-size: 10px;
+            color: #4a5580;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(15, 20, 45, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.15);
+            border-radius: 16px;
+            transition: opacity 0.4s, transform 0.4s;
+        }
+
+        .controls.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .control-btn {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            color: #a0b8e8;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-btn:hover {
+            background: rgba(79, 172, 254, 0.2);
+            border-color: rgba(79, 172, 254, 0.4);
+            color: #4facfe;
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.3), rgba(0, 242, 254, 0.2));
+            border-color: #4facfe;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.2);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            z-index: 100;
+            background: rgba(10, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            padding: 14px 18px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            min-width: 200px;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e8ff;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-amount {
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tooltip-location {
+            font-size: 11px;
+            color: #6b7db3;
+            margin-top: 4px;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a1a;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(79, 172, 254, 0.15);
+            border-top-color: #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6b7db3;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Zoom level indicator */
+        .zoom-indicator {
+            position: fixed;
+            left: 30px;
+            bottom: 30px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zoom-bar {
+            width: 6px;
+            height: 120px;
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 3px;
+            position: relative;
+            border: 1px solid rgba(79, 172, 254, 0.15);
+        }
+
+        .zoom-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, #4facfe, #00f2fe);
+            border-radius: 3px;
+            transition: height 0.3s;
+        }
+
+        .zoom-label {
+            font-size: 9px;
+            color: #6b7db3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            writing-mode: vertical-lr;
+            transform: rotate(180deg);
+        }
+
+        .zoom-threshold {
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            height: 2px;
+            background: #ff6b6b;
+            border-radius: 1px;
+            opacity: 0.6;
+        }
+
+        .zoom-threshold-label {
+            position: absolute;
+            left: 14px;
+            font-size: 8px;
+            color: #ff6b6b;
+            white-space: nowrap;
+            transform: translateY(-50%);
+        }
+
+        /* Dark Leaflet theme overrides */
+        .leaflet-container {
+            background: #0a0a1a !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: rgba(15, 20, 45, 0.9) !important;
+            color: #4facfe !important;
+            border-color: rgba(79, 172, 254, 0.2) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: rgba(79, 172, 254, 0.2) !important;
+        }
+
+        .leaflet-control-attribution {
+            background: rgba(15, 20, 45, 0.7) !important;
+            color: #4a5580 !important;
+            font-size: 9px !important;
+        }
+
+        .leaflet-control-attribution a {
+            color: #4facfe !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .side-panel {
+                display: none;
+            }
+
+            .stats-bar {
+                gap: 16px;
+            }
+
+            .stat-value {
+                font-size: 16px;
+            }
+
+            .header {
+                padding: 15px 20px;
+            }
+
+            .zoom-indicator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Cargando Planeta...</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Map overlay -->
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="total-amount">$0</div>
+                <div class="stat-label">Total Recaudado</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-donors">0</div>
+                <div class="stat-label">Donantes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-countries">0</div>
+                <div class="stat-label">Países</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Side Panel -->
+    <div class="side-panel" id="side-panel">
+        <div class="panel-title">📋 Donaciones Recientes</div>
+        <div id="donation-list"></div>
+    </div>
+
+    <!-- Controls (3D mode) -->
+    <div class="controls" id="globe-controls">
+        <button class="control-btn active" id="btn-rotate" onclick="toggleAutoRotate()">
+            🔄 Auto-Rotar
+        </button>
+        <button class="control-btn" id="btn-reset" onclick="resetView()">
+            🏠 Reiniciar Vista
+        </button>
+        <button class="control-btn" id="btn-markers" onclick="toggleMarkers()">
+            Marcadores
+        </button>
+    </div>
+
+    <!-- Back to globe button (Map mode) -->
+    <button class="back-to-globe" id="btn-back-globe" onclick="switchToGlobe()">
+        Volver al Globo 3D
+    </button>
+
+    <!-- Map transition hint -->
+    <div class="map-indicator" id="map-indicator">
+        <span class="icon"></span> Acércate más para ver el mapa con relieve...
+    </div>
+
+    <!-- Zoom indicator -->
+    <div class="zoom-indicator" id="zoom-indicator">
+        <div class="zoom-bar">
+            <div class="zoom-fill" id="zoom-fill" style="height: 30%"></div>
+            <div class="zoom-threshold" style="bottom: 75%">
+                <span class="zoom-threshold-label">Mapa</span>
+            </div>
+        </div>
+        <div class="zoom-label">ZOOM</div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Fetch real API data
+        let donations = [];
+
+        // Helper to generate a random location and emoji/color if a real donation has none
+        const cities = [
+            { city: 'Bogotá', country: 'Colombia', lat: 4.7110, lng: -74.0721, emoji: '🇨🇴', color: '#ffdd59' },
+            { city: 'Medellín', country: 'Colombia', lat: 6.2442, lng: -75.5812, emoji: '🇨🇴', color: '#ffdd59' },
+            { city: 'Madrid', country: 'España', lat: 40.4168, lng: -3.7038, emoji: '🇪🇸', color: '#ffb8b8' },
+            { city: 'Buenos Aires', country: 'Argentina', lat: -34.6037, lng: -58.3816, emoji: '🇦🇷', color: '#c7ecee' },
+            { city: 'Santiago', country: 'Chile', lat: -33.4489, lng: -70.6693, emoji: '🇨🇱', color: '#eb4d4b' },
+            { city: 'Miami', country: 'EE.UU.', lat: 25.7617, lng: -80.1918, emoji: '🇺🇸', color: '#4facfe' }
+        ];
+
+        async function loadBackendData() {
+            try {
+                // Change location depending on URL origin to target backend correctly
+                const response = await fetch(window.location.origin + '/api/donations');
+                if (!response.ok) throw new Error('Network error');
+                const json = await response.json();
+
+                donations = json.recentDonations.map(d => {
+                    // Random location if not provided in DB or if it's too 0.0
+                    const hasValidLocation = d.lat != null && d.lng != null && d.lat !== 0 && d.lng !== 0;
+                    const loc = hasValidLocation ? null : cities[Math.floor(Math.random() * cities.length)];
+
+                    return {
+                        name: d.userName || "Donante Anónimo",
+                        amount: parseFloat(d.amount),
+                        city: d.city && d.city !== "Ubicación web" && d.city !== "Desconocida" ? d.city : (loc ? loc.city : "Aporte Digital"),
+                        country: d.country && d.country !== "Global" ? d.country : (loc ? loc.country : "Earth"),
+                        lat: hasValidLocation ? parseFloat(d.lat) : (loc.lat + (Math.random() - 0.5) * 5),
+                        lng: hasValidLocation ? parseFloat(d.lng) : (loc.lng + (Math.random() - 0.5) * 5),
+                        message: d.message || "Por un futuro más sostenible y verde.",
+                        time: new Date(d.createdAt).toLocaleDateString(),
+                        color: d.color || (loc ? loc.color : "#00f2fe"),
+                        emoji: d.emoji || (loc ? loc.emoji : "🌟")
+                    }
+                });
+
+                // If no array, load some hardcoded backups
+                if (donations.length === 0) {
+                    donations = [
+                        { name: "Sebastián Reyes", amount: 250, city: "Ciudad de México", country: "México", lat: 19.4326, lng: -99.1332, message: "¡Feliz de apoyar esta causa urbana!", time: "Hoy", color: "#ff6b6b", emoji: "🇲🇽" }
+                    ];
+                }
+
+                // Add fake API total if backend overrides it
+                window.serverTotals = {
+                    totalDonated: json.totalDonated || donations.reduce((sum, d) => sum + d.amount, 0),
+                    donationsCount: json.donationsCount || donations.length
+                };
+
+            } catch (err) {
+                console.error("API Error, using fallback data", err);
+                donations = [
+                    { name: "Sebastián Reyes", amount: 250, city: "Ciudad de México", country: "México", lat: 19.4326, lng: -99.1332, message: "¡Feliz de apoyar esta causa! 🎉", time: "Hace 2 min", color: "#ff6b6b", emoji: "🇲🇽" },
+                    { name: "Aria Sterling", amount: 500, city: "New York", country: "Estados Unidos", lat: 40.7128, lng: -74.006, message: "Together we make a difference!", time: "Hace 5 min", color: "#4facfe", emoji: "🇺🇸" }
+                ];
+                window.serverTotals = { totalDonated: 750, donationsCount: 2 };
+            }
+
+            init(); // Start three.js
+        }
+
+        // ========== STATE ==========
+        let scene, camera, renderer, controls, earth, atmosphere, markers = [];
+        let autoRotate = true;
+        let markersVisible = true;
+        let raycaster, mouse;
+        const markerMeshes = [];
+        let leafletMap = null;
+        let isMapMode = false;
+        let mapTransitionThreshold = 1.6; // Camera distance to trigger map
+        let mapHintThreshold = 2.2; // Distance to show "zoom more" hint
+
+        // ========== THREE.JS SETUP ==========
+        function init() {
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 3.2);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0x0a0a1a, 1);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.5;
+            controls.minDistance = 1.2;
+            controls.maxDistance = 8;
+            controls.enablePan = false;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            createStars();
+            createEarth();
+            createLights();
+            createMarkers();
+
+            populateDonationList();
+            updateStats();
+
+            window.addEventListener('resize', onResize);
+            window.addEventListener('mousemove', onMouseMove);
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 1000);
+
+            animate();
+        }
+
+        function createStars() {
+            const starsGeo = new THREE.BufferGeometry();
+            const starPositions = [];
+            for (let i = 0; i < 3000; i++) {
+                starPositions.push(
+                    (Math.random() - 0.5) * 200,
+                    (Math.random() - 0.5) * 200,
+                    (Math.random() - 0.5) * 200
+                );
+            }
+            starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+            const starsMat = new THREE.PointsMaterial({
+                color: 0xffffff, size: 0.08, transparent: true, opacity: 0.8, sizeAttenuation: true
+            });
+            scene.add(new THREE.Points(starsGeo, starsMat));
+        }
+
+        function createEarth() {
+            const textureLoader = new THREE.TextureLoader();
+            const earthGeo = new THREE.SphereGeometry(1, 64, 64);
+
+            const earthTexture = textureLoader.load(
+                'https://unpkg.com/three-globe@2.24.4/example/img/earth-blue-marble.jpg',
+                () => renderer.render(scene, camera)
+            );
+            const bumpTexture = textureLoader.load(
+                'https://unpkg.com/three-globe@2.24.4/example/img/earth-topology.png'
+            );
+
+            const earthMat = new THREE.MeshPhongMaterial({
+                map: earthTexture,
+                bumpMap: bumpTexture,
+                bumpScale: 0.03,
+                specular: new THREE.Color(0x333344),
+                shininess: 15
+            });
+
+            earth = new THREE.Mesh(earthGeo, earthMat);
+            scene.add(earth);
+
+            // Atmosphere
+            const atmosphereMat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }`,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.72 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+                        gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+                    }`,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true
+            });
+
+            atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.02, 64, 64), atmosphereMat);
+            atmosphere.scale.set(1.15, 1.15, 1.15);
+            scene.add(atmosphere);
+
+            // Outer glow
+            const outerGlowMat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }`,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    void main() {
+                        float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
+                        gl_FragColor = vec4(0.15, 0.4, 0.9, 0.6) * intensity;
+                    }`,
+                blending: THREE.AdditiveBlending,
+                side: THREE.FrontSide,
+                transparent: true
+            });
+            const outerGlow = new THREE.Mesh(new THREE.SphereGeometry(1.02, 64, 64), outerGlowMat);
+            outerGlow.scale.set(1.08, 1.08, 1.08);
+            scene.add(outerGlow);
+        }
+
+        function createLights() {
+            scene.add(new THREE.AmbientLight(0x334466, 0.6));
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+            const backLight = new THREE.DirectionalLight(0x4488cc, 0.3);
+            backLight.position.set(-5, -2, -5);
+            scene.add(backLight);
+        }
+
+        function latLngToVector3(lat, lng, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            return new THREE.Vector3(
+                -(radius * Math.sin(phi) * Math.cos(theta)),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        function createMarkers() {
+            donations.forEach((donation, index) => {
+                const pos = latLngToVector3(donation.lat, donation.lng, 1.01);
+                const color = new THREE.Color(donation.color);
+
+                // Marker sphere
+                const marker = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.018, 16, 16),
+                    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 })
+                );
+                marker.position.copy(pos);
+                marker.userData = { donationIndex: index };
+                earth.add(marker);
+                markerMeshes.push(marker);
+
+                // Ring
+                const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(0.025, 0.04, 32),
+                    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+                );
+                ring.position.copy(pos);
+                ring.lookAt(new THREE.Vector3(0, 0, 0));
+                earth.add(ring);
+
+                // Pulse
+                const pulse = new THREE.Mesh(
+                    new THREE.RingGeometry(0.04, 0.045, 32),
+                    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+                );
+                pulse.position.copy(pos);
+                pulse.lookAt(new THREE.Vector3(0, 0, 0));
+                earth.add(pulse);
+
+                // Beam
+                const beamEnd = latLngToVector3(donation.lat, donation.lng, 1.08 + (donation.amount / 1500));
+                const beam = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([pos, beamEnd]),
+                    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 })
+                );
+                earth.add(beam);
+
+                // End sphere
+                const endSphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.008, 8, 8),
+                    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7 })
+                );
+                endSphere.position.copy(beamEnd);
+                earth.add(endSphere);
+
+                markers.push({ marker, ring, pulse, beam, endSphere, donation });
+            });
+        }
+
+        // ========== LEAFLET MAP ==========
+        function initLeafletMap() {
+            if (leafletMap) return;
+
+            leafletMap = L.map('map', {
+                zoomControl: true,
+                attributionControl: true,
+                minZoom: 3,
+                maxZoom: 18
+            }).setView([20, 0], 3);
+
+            // Terrain/relief tile layer - OpenTopoMap
+            const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenTopoMap',
+                maxZoom: 17
+            });
+
+            // Satellite layer - ESRI
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri',
+                maxZoom: 18
+            });
+
+            // Street map - dark style from CartoDB
+            const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© CartoDB',
+                maxZoom: 19
+            });
+
+            // Default to satellite for "Google Earth" feel
+            satelliteLayer.addTo(leafletMap);
+
+            // Layer control
+            const baseMaps = {
+                "🛰️ Satélite": satelliteLayer,
+                "⛰️ Relieve / Topográfico": topoLayer,
+                "🌙 Oscuro": darkLayer
+            };
+            L.control.layers(baseMaps, null, { position: 'topright' }).addTo(leafletMap);
+
+            // Listen for zoom out to return to globe
+            leafletMap.on('zoomend', () => {
+                if (isMapMode && leafletMap.getZoom() <= 3) {
+                    switchToGlobe();
+                }
+            });
+
+            // Add donation markers to leaflet map
+            donations.forEach((d, i) => {
+                const markerHtml = `
+                    <div class="custom-marker">
+                        <div class="marker-pulse" style="background: ${d.color};"></div>
+                        <div class="marker-dot" style="background: ${d.color};"></div>
+                        <div class="marker-label">
+                            <span class="marker-label-name">${d.name.split(' ')[0]}</span>
+                            <span class="marker-label-amount">$${d.amount}</span>
+                        </div>
+                    </div>
+                `;
+
+                const icon = L.divIcon({
+                    html: markerHtml,
+                    className: '',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11],
+                    popupAnchor: [0, -20]
+                });
+
+                const leafletMarker = L.marker([d.lat, d.lng], { icon }).addTo(leafletMap);
+
+                const popupContent = `
+                    <div class="popup-header">
+                        <!-- Removed emoji -->
+                        <div>
+                            <div class="popup-name">${d.name}</div>
+                            <div class="popup-location">${d.city}, ${d.country}</div>
+                        </div>
+                    </div>
+                    <div class="popup-amount">$${d.amount}</div>
+                    <div class="popup-message">"${d.message}"</div>
+                `;
+
+                leafletMarker.bindPopup(popupContent, { className: 'custom-popup', maxWidth: 280 });
+            });
+        }
+
+        function getCameraLookAtLatLng() {
+            // Raycast from camera center to find which part of globe we're looking at
+            const centerRay = new THREE.Raycaster();
+            centerRay.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const hits = centerRay.intersectObject(earth);
+
+            if (hits.length > 0) {
+                const point = hits[0].point;
+                // Convert world coords to lat/lng based on the exact inverse of latLngToVector3
+                const lat = 90 - (Math.acos(point.y / 1) * 180 / Math.PI);
+                const theta = Math.atan2(point.z, -point.x);
+                let lng = (theta * 180 / Math.PI) - 180;
+
+                // Wrap to -180..180
+                while (lng < -180) lng += 360;
+                while (lng > 180) lng -= 360;
+
+                return { lat, lng };
+            }
+            return { lat: 20, lng: 0 };
+        }
+
+        function switchToMap() {
+            if (isMapMode) return;
+            isMapMode = true;
+
+            // Determine where to center the map
+            const lookAt = getCameraLookAtLatLng();
+
+            // Calculate zoom based on camera distance
+            const dist = camera.position.length();
+            let mapZoom = Math.round(14 - dist * 4);
+            mapZoom = Math.max(4, Math.min(12, mapZoom));
+
+            initLeafletMap();
+            leafletMap.setView([lookAt.lat, lookAt.lng], mapZoom);
+
+            // UI transitions
+            document.getElementById('canvas-container').classList.add('faded');
+            document.getElementById('map-container').classList.add('active');
+            document.getElementById('globe-controls').classList.add('hidden');
+            document.getElementById('btn-back-globe').classList.add('visible');
+            document.getElementById('map-indicator').classList.remove('visible');
+            document.getElementById('zoom-indicator').style.opacity = '0';
+
+            // Pause auto-rotation
+            controls.autoRotate = false;
+
+            setTimeout(() => {
+                if (leafletMap) leafletMap.invalidateSize();
+            }, 650);
+        }
+
+        function switchToGlobe() {
+            if (!isMapMode) return;
+            isMapMode = false;
+
+            document.getElementById('canvas-container').classList.remove('faded');
+            document.getElementById('map-container').classList.remove('active');
+            document.getElementById('globe-controls').classList.remove('hidden');
+            document.getElementById('btn-back-globe').classList.remove('visible');
+            document.getElementById('zoom-indicator').style.opacity = '1';
+
+            // Sync 3D globe camera back to the 2D map center
+            if (leafletMap) {
+                const center = leafletMap.getCenter();
+                // 2.5 is the fallback camera distance
+                const newPos = latLngToVector3(center.lat, center.lng, 2.5);
+                camera.position.copy(newPos);
+            } else {
+                const dir = camera.position.clone().normalize();
+                camera.position.copy(dir.multiplyScalar(2.5));
+            }
+
+            controls.update();
+
+            if (autoRotate) {
+                controls.autoRotate = true;
+            }
+        }
+
+        // ========== UI ==========
+        function populateDonationList() {
+            const list = document.getElementById('donation-list');
+            list.innerHTML = '';
+            donations.forEach((d, i) => {
+                const card = document.createElement('div');
+                card.className = 'donation-card';
+                card.id = `donation-card-${i}`;
+                card.onclick = () => focusOnDonation(i);
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="donor-info">
+                            <div class="donor-avatar" style="background: ${d.color}20; border: 2px solid ${d.color}; color: ${d.color}; font-weight: bold;">${d.name.charAt(0)}</div>
+                            <div>
+                                <div class="donor-name">${d.name}</div>
+                                <div class="donor-location">${d.city}, ${d.country}</div>
+                            </div>
+                        </div>
+                        <div class="donation-amount">$${d.amount}</div>
+                    </div>
+                    <div class="card-message">"${d.message}"</div>
+                    <div class="card-time">${d.time}</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            // Read from our server response totalDonated and counts
+            const totalAmount = window.serverTotals ? window.serverTotals.totalDonated : donations.reduce((sum, d) => sum + d.amount, 0);
+            const countries = new Set(donations.map(d => d.country)).size;
+            const donors = window.serverTotals ? window.serverTotals.donationsCount : donations.length;
+
+            animateNumber('total-amount', totalAmount, '$');
+            animateNumber('total-donors', donors, '');
+            animateNumber('total-countries', countries, '');
+        }
+
+        function animateNumber(elementId, target, prefix) {
+            const el = document.getElementById(elementId);
+            let current = 0;
+            const step = target / 40;
+            const interval = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(interval); }
+                el.textContent = prefix + Math.round(current).toLocaleString();
+            }, 40);
+        }
+
+        // ========== INTERACTIONS ==========
+        function focusOnDonation(index) {
+            const donation = donations[index];
+
+            if (isMapMode) {
+                // Pan Leaflet map to the donation
+                leafletMap.flyTo([donation.lat, donation.lng], 10, { duration: 1.2 });
+                return;
+            }
+
+            const pos = latLngToVector3(donation.lat, donation.lng, 3.2);
+            controls.autoRotate = false;
+            document.getElementById('btn-rotate').classList.remove('active');
+            autoRotate = false;
+
+            const startPos = camera.position.clone();
+            const duration = 1200;
+            const startTime = Date.now();
+
+            function animateCamera() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - t, 3);
+                camera.position.lerpVectors(startPos, pos, eased);
+                controls.update();
+                if (t < 1) requestAnimationFrame(animateCamera);
+            }
+            animateCamera();
+
+            document.querySelectorAll('.donation-card').forEach(c => c.classList.remove('active'));
+            const card = document.getElementById(`donation-card-${index}`);
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function toggleAutoRotate() {
+            autoRotate = !autoRotate;
+            controls.autoRotate = autoRotate;
+            document.getElementById('btn-rotate').classList.toggle('active');
+        }
+
+        function resetView() {
+            if (isMapMode) {
+                switchToGlobe();
+                return;
+            }
+
+            const targetPos = new THREE.Vector3(0, 0, 3.2);
+            const startPos = camera.position.clone();
+            const duration = 800;
+            const startTime = Date.now();
+
+            function animateReset() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - t, 3);
+                camera.position.lerpVectors(startPos, targetPos, eased);
+                controls.update();
+                if (t < 1) requestAnimationFrame(animateReset);
+            }
+            animateReset();
+
+            controls.autoRotate = true;
+            autoRotate = true;
+            document.getElementById('btn-rotate').classList.add('active');
+        }
+
+        function toggleMarkers() {
+            markersVisible = !markersVisible;
+            document.getElementById('btn-markers').classList.toggle('active');
+            markers.forEach(m => {
+                m.marker.visible = markersVisible;
+                m.ring.visible = markersVisible;
+                m.pulse.visible = markersVisible;
+                m.beam.visible = markersVisible;
+                m.endSphere.visible = markersVisible;
+            });
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isMapMode) return;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(markerMeshes);
+            const tooltip = document.getElementById('tooltip');
+
+            if (intersects.length > 0) {
+                const idx = intersects[0].object.userData.donationIndex;
+                const d = donations[idx];
+                document.getElementById('tooltip-name').textContent = d.name;
+                document.getElementById('tooltip-amount').textContent = '$' + d.amount;
+                document.getElementById('tooltip-location').textContent = d.city + ', ' + d.country;
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+                tooltip.classList.add('visible');
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.remove('visible');
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (leafletMap) leafletMap.invalidateSize();
+        }
+
+        // ========== ANIMATION LOOP ==========
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            // Animate marker effects
+            markers.forEach((m, i) => {
+                const scale = 1 + Math.sin(elapsed * 2 + i * 0.5) * 0.3;
+                m.pulse.scale.set(scale, scale, scale);
+                m.pulse.material.opacity = 0.3 * (1 - (scale - 1) / 0.3);
+                m.ring.material.opacity = 0.3 + Math.sin(elapsed * 3 + i) * 0.15;
+                const endScale = 1 + Math.sin(elapsed * 2.5 + i * 0.7) * 0.2;
+                m.endSphere.scale.set(endScale, endScale, endScale);
+            });
+
+            // Check zoom level for map transition
+            if (!isMapMode) {
+                const dist = camera.position.length();
+                const indicator = document.getElementById('map-indicator');
+                const zoomFill = document.getElementById('zoom-fill');
+
+                // Update zoom bar
+                const zoomPercent = Math.max(0, Math.min(100, ((8 - dist) / (8 - 1.2)) * 100));
+                zoomFill.style.height = zoomPercent + '%';
+
+                // Show hint when getting close
+                if (dist < mapHintThreshold && dist > mapTransitionThreshold) {
+                    indicator.textContent = 'Acércate más para ver el mapa con relieve...';
+                    indicator.classList.add('visible');
+                } else {
+                    indicator.classList.remove('visible');
+                }
+
+                // Trigger map transition at threshold
+                if (dist < mapTransitionThreshold) {
+                    switchToMap();
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // START EXECUTION 
+        loadBackendData();
+    </script>
+</body>
+
+</html>
