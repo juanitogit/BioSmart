@@ -11,10 +11,10 @@ export const aiRouter = Router();
 
 import { OpenAI } from "openai";
 
-const groq = new OpenAI({
+const groq = process.env.GROQ_API_KEY ? new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1",
-});
+}) : null;
 
 const SYSTEM_PROMPT = `Eres el asistente inteligente de BioSmart, una plataforma líder en agricultura urbana, sostenibilidad e IoT.
 

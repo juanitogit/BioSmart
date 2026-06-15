@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Leaf, Moon, Sun, ShoppingCart } from "lucide-react";
+import { Menu, X, Moon, Sun, ShoppingCart } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity, MapPin } from "lucide-react";
+import { LogIn, LogOut, User, LayoutDashboard, ShoppingBag, GraduationCap, Heart, Activity, MapPin, Download, TrendingUp, Package } from "lucide-react";
 import { Button } from "./ui/button";
 import { 
   DropdownMenu, 
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger 
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { NotificationBell } from "./NotificationBell";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -144,6 +145,9 @@ export function Navbar() {
             )}
           </Button>
 
+          {/* Notification Bell - only for authenticated users */}
+          {user && <NotificationBell />}
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -167,6 +171,28 @@ export function Navbar() {
                     <LayoutDashboard size={16} /> Dashboard
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/favoritos" className="flex items-center gap-2 cursor-pointer">
+                    <Heart size={16} /> Mis Favoritos
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/mis-compras" className="flex items-center gap-2 cursor-pointer">
+                    <Package size={16} /> Mis Compras
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/exportar" className="flex items-center gap-2 cursor-pointer">
+                    <Download size={16} /> Exportar Datos
+                  </Link>
+                </DropdownMenuItem>
+                {(user.role === 'seller' || user.role === 'admin') && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/mis-ventas" className="flex items-center gap-2 cursor-pointer">
+                      <TrendingUp size={16} /> Dashboard Ventas
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" className="flex items-center gap-2 cursor-pointer">

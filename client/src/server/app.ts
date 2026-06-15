@@ -24,6 +24,12 @@ import { adminRouter } from "./routes/admin.js";
 import { usersRouter } from "./routes/users.js";
 import { cropIntelRouter } from "./routes/crop-intel.js";
 import { urbanFarmsRouter } from "./routes/urban-farms.js";
+import { reviewsRouter } from "./routes/reviews.js";
+import { favoritesRouter } from "./routes/favorites.js";
+import { purchasesRouter } from "./routes/purchases.js";
+import { sellerDashboardRouter } from "./routes/seller-dashboard.js";
+import { exportRouter } from "./routes/export.js";
+import { notificationsRouter } from "./routes/notifications.js";
 import passport from "./lib/passport.js";
 
 const app = express();
@@ -46,6 +52,12 @@ app.use("/api/admin", adminRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/crop-intel", cropIntelRouter);
 app.use("/api/urban-farms", urbanFarmsRouter);
+app.use("/api/reviews", reviewsRouter);
+app.use("/api/favorites", favoritesRouter);
+app.use("/api/purchases", purchasesRouter);
+app.use("/api/seller", sellerDashboardRouter);
+app.use("/api/export", exportRouter);
+app.use("/api/notifications", notificationsRouter);
 
 // Health check
 app.get("/api/health", (_req, res) => {

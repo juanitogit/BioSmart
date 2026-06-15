@@ -277,6 +277,38 @@ export const urbanFarms = pgTable("urban_farms", {
   createdAtIdx: index("created_at_idx").on(table.createdAt)
 }));
 
+// ============ REVIEWS ============
+
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id")
+    .references(() => products.id)
+    .notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  rating: integer("rating").notNull(), // 1-5
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  productUserIdx: index("product_user_idx").on(table.productId, table.userId),
+}));
+
+// ============ FAVORITES ============
+
+export const favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  productId: integer("product_id")
+    .references(() => products.id)
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userProductFavIdx: index("user_product_fav_idx").on(table.userId, table.productId),
+}));
+
 // ============ RELATIONS ============
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -291,6 +323,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   notifications: many(notifications),
   aiInsights: many(aiInsights),
   urbanFarms: many(urbanFarms),
+  reviews: many(reviews),
+  favorites: many(favorites),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
